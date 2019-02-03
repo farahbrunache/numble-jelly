@@ -1,0 +1,164 @@
+<template>
+  <div class="add">
+    <div class="add-item container">
+      <h2 class="center-align">Edit Bundle</h2>
+      <form @submit.prevent="Edititem">
+        <div class="row">
+          <div class="input-field col s8">
+            <p class="sub_title">Item Title</p>
+            <input type="text" name="title" class="validate" v-model="item.title">
+          </div>
+          <div class="input-field col s8">
+            <p class="sub_title">Price</p>
+            <input type="text" name="price" v-model="item.price">
+          </div>
+          <div class="input-field col s12">
+            <p class="sub_title">Description</p>
+            <textarea
+              id="textarea2"
+              class="materialize-textarea"
+              data-length="120"
+              v-model="item.content"
+            ></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <p class="sub_title">Tag</p>
+          <div class="col s4">
+            <input type="text" name="tag" v-model="item.tags[0]">
+            <label for="tag">Tag 1</label>
+          </div>
+          <div class="col s4">
+            <input type="text" name="tag" v-model="item.tags[1]">
+            <label for="tag">Tag 2</label>
+          </div>
+          <div class="col s4">
+            <input type="text" name="tag" v-model="item.tags[2]">
+            <label for="tag">Tag 3</label>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="row quantity">
+          <p class="sub_title">Available Image Sizes</p>
+          <div class="col s4">
+            <p>S</p>
+            <div class="input-field inline">
+              <input type="text" v-model="item.S">
+            </div>
+          </div>
+          <div class="col s4">
+            <p>M</p>
+            <div class="input-field inline">
+              <input type="text" v-model="item.M">
+            </div>
+          </div>
+          <div class="col s4">
+            <p>L</p>
+            <div class="input-field inline">
+              <input type="text" v-model="item.L">
+            </div>
+          </div>
+        </div>
+
+        <div class="field center-align btn_box">
+          <p v-if="feedback" class="red-text">{{feedback}}</p>
+          <button class="btn waves-effect waves-light deep-orange lighten-1">Update Bundle</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script>
+import db from '../firebase/firebaseinit-dev'
+import firebase from 'firebase'
+import slugify from 'slugify'
+
+export default {
+  name: 'Edit',
+  data () {
+    return {
+      item: null,
+      feedback: null
+    }
+  },
+  methods: {
+    Edititem(){
+          if(this.item.title && this.item.price && this.item.content){
+              this.feedback=null
+              this.item.slug = slugify(this.item.title, {
+                  replacement: '-',
+                  remove: /[$*_+~.()'"!\-:@]/g,
+                  lower: true
+              })
+              console.log(this.item.slug);
+
+              db.collection('items').doc(this.item.id).update({
+                  title: this.item.title,
+                  price: this.item.price,
+                  content: this.item.content,
+                  tags: this.item.tags,
+                  colors: this.item.colors,
+                  S: this.item.S,
+                  M: this.item.M,
+                  L: this.item.L,
+                  //date: Date.now(),
+                  slug: this.item.slug,
+                  wish: false
+              }).then(() => {
+                  this.$swal({
+                    position: 'center',
+                    type: 'success',
+                    title: 'Success!',
+                    showConfirmButton: false,
+                    timer: 1000
+                 })
+                  this.$router.push({ name: 'Index'})
+              }).catch(err => {
+                  console.log(err);
+              })
+
+          }else {
+              this.feedback= 'else error message'
+          }
+      },
+  },
+  created(){
+    let ref = db.collection('items').where('slug', '==', this.$route.params.item_slug)
+      ref.get().then(snapshot => {
+          snapshot.forEach(doc => {
+              //console.log(doc.data());
+              this.item = doc.data()
+              this.item.id = doc.id
+          })
+      })  
+  }
+
+}
+</script>
+
+
+<style scoped>
+.add {
+  width: 70%;
+  margin: 0 auto;
+}
+.add h2 {
+  color: #ff7657;
+  font-size: 1.8em;
+  font-weight: bold;
+}
+.sub_title {
+  font-weight: bold;
+  color: #ff7657;
+}
+.divider {
+  margin: 40px auto;
+}
+
+.btn_box {
+  margin-bottom: 40px;
+}
+</style>
+
